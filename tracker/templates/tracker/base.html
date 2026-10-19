@@ -1,0 +1,448 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}JobTracker{% endblock %}</title>
+
+    <script>
+        const savedTheme = localStorage.getItem("jobtrack-theme");
+
+        const preferredTheme = window.matchMedia(
+            "(prefers-color-scheme: dark)"
+        ).matches ? "dark" : "light";
+
+        document.documentElement.dataset.theme =
+            savedTheme || preferredTheme;
+    </script>
+
+    <style>
+        :root {
+            color-scheme: light;
+
+            --bg: #f8f9fb;
+            --surface: #ffffff;
+            --text: #202633;
+            --muted: #717987;
+            --border: #e3e6eb;
+            --primary: #315bbb;
+            --primary-hover: #244a9c;
+            --hover: #f3f5f8;
+            --input: #ffffff;
+        }
+
+        html[data-theme="dark"] {
+            color-scheme: dark;
+
+            --bg: #111419;
+            --surface: #1b2027;
+            --text: #e5e8ed;
+            --muted: #9ca5b3;
+            --border: #343a44;
+            --primary: #6689e8;
+            --primary-hover: #82a0f0;
+            --hover: #252b34;
+            --input: #222832;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", system-ui, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-inner {
+            max-width: none;
+            margin: auto;
+            padding: 12px 24px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand {
+            color: var(--text);
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand:hover {
+            text-decoration: none;
+        }
+
+        .nav-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .username {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 7px 12px;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 35px auto;
+            padding: 0 24px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 26px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 27px;
+            font-weight: 650;
+            letter-spacing: -0.8px;
+        }
+
+        h2 {
+            font-size: 19px;
+            margin-top: 0;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            padding: 9px 14px;
+            font: inherit;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-secondary {
+            background: var(--hover);
+            color: var(--text);
+            border-color: var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: #dc5757;
+            border-color: var(--border);
+        }
+
+        .btn-danger:hover {
+            background: #dc5757;
+            color: white;
+        }
+
+        input, select, textarea {
+            background: var(--input);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            font: inherit;
+            max-width: 100%;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 1px;
+        }
+
+        .card input,
+        .card select,
+        .card textarea {
+            width: 100%;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filters input {
+            width: 260px;
+        }
+
+        .filters select {
+            width: 190px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        th, td {
+            padding: 15px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: var(--hover);
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-select {
+            min-width: 155px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .status-select[data-status="oa_pending"] {
+            color: #c88c28;
+        }
+
+        .status-select[data-status="oa_completed"] {
+            color: #348cba;
+        }
+
+        .status-select[data-status="interview"] {
+            color: #a17bdd;
+        }
+
+        .status-select[data-status="offer"] {
+            color: #389c77;
+        }
+
+        .status-select[data-status="rejected"] {
+            color: #ce6666;
+        }
+
+        .errorlist {
+            color: #dc5757;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
+
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: 210px;
+            display: flex;
+            flex-direction: column;
+            padding: 22px 16px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            z-index: 20;
+        }
+        .sidebar .brand { margin: 0 10px 26px; }
+        .sidebar nav { display: grid; gap: 5px; }
+        .sidebar a.nav-link, .sidebar-footer button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 0;
+            border-radius: 4px;
+            color: var(--text);
+            background: transparent;
+            text-align: left;
+            font: inherit;
+            cursor: pointer;
+        }
+        .sidebar a.nav-link:hover, .sidebar-footer button:hover,
+        .sidebar a[aria-current="page"] { background: var(--hover); text-decoration: none; }
+        .sidebar a[aria-current="page"] { color: var(--primary); font-weight: 600; }
+        .sidebar-footer { margin-top: auto; padding-top: 24px; }
+        .sidebar-footer .username { display: block; padding: 10px; overflow-wrap: anywhere; }
+        body.has-sidebar .topbar, body.has-sidebar main { margin-left: 210px; }
+        body.has-sidebar main { max-width: none; margin-top: 28px; margin-right: 0; }
+        body.sidebar-collapsed .sidebar { display: none; }
+        body.sidebar-collapsed .topbar, body.sidebar-collapsed main { margin-left: 0; }
+        a:focus-visible, button:focus-visible, summary:focus-visible {
+            outline: 2px solid var(--primary); outline-offset: 3px;
+        }
+        @media (max-width: 700px) {
+            .page-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+            .container { padding: 0 14px; }
+            .card { padding: 16px; }
+            .sidebar { top: 61px; }
+            body.has-sidebar .topbar, body.has-sidebar main { margin-left: 0; }
+            .topbar { position: relative; z-index: 21; }
+        }
+    </style>
+</head>
+
+<body class="{% if user.is_authenticated %}has-sidebar{% endif %}">
+{% if user.is_authenticated %}
+<script>
+    if (window.matchMedia("(max-width: 700px)").matches) {
+        document.body.classList.add("sidebar-collapsed");
+    }
+</script>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a class="brand" href="{% url 'tracker:dashboard' %}">JobTracker</a>
+    <nav>
+        <a class="nav-link" href="{% url 'tracker:dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>Applications</a>
+        <a class="nav-link" href="{% url 'tracker:activity' %}" {% if request.resolver_match.url_name == 'activity' %}aria-current="page"{% endif %}>Deadlines &amp; Statistics</a>
+        <a class="nav-link" href="{% url 'tracker:add_application' %}" {% if request.resolver_match.url_name == 'add_application' %}aria-current="page"{% endif %}>New Application</a>
+    </nav>
+    <div class="sidebar-footer">
+        <span class="username">{{ user.username }}</span>
+        <button type="button" id="themeToggle" onclick="toggleTheme()">Dark mode</button>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</aside>
+{% endif %}
+<header class="topbar">
+    <div class="topbar-inner">
+        {% if user.is_authenticated %}
+            <button type="button" class="btn btn-secondary" id="sidebarToggle" aria-controls="sidebar" aria-expanded="true" onclick="toggleSidebar()">Hide menu</button>
+        {% else %}
+            <a class="brand" href="{% url 'tracker:dashboard' %}">JobTracker</a>
+            <div class="nav-actions">
+                <button type="button" class="theme-toggle" id="themeToggle" onclick="toggleTheme()">Dark mode</button>
+            </div>
+        {% endif %}
+    </div>
+</header>
+
+<main class="container">
+    {% block content %}
+    {% endblock %}
+</main>
+
+<script>
+    function updateThemeButton() {
+        const button = document.getElementById("themeToggle");
+
+        button.textContent =
+            document.documentElement.dataset.theme === "dark"
+                ? "Light mode"
+                : "Dark mode";
+    }
+
+    function toggleTheme() {
+        const current = document.documentElement.dataset.theme;
+
+        const next = current === "dark" ? "light" : "dark";
+
+        document.documentElement.dataset.theme = next;
+
+        localStorage.setItem("jobtrack-theme", next);
+
+        updateThemeButton();
+    }
+
+    function updateSidebarButton() {
+        const button = document.getElementById("sidebarToggle");
+        if (!button) return;
+        const expanded = !document.body.classList.contains("sidebar-collapsed");
+        button.setAttribute("aria-expanded", String(expanded));
+        button.textContent = expanded ? "Hide menu" : "Show menu";
+    }
+
+    function toggleSidebar() {
+        document.body.classList.toggle("sidebar-collapsed");
+        updateSidebarButton();
+    }
+
+    updateSidebarButton();
+    updateThemeButton();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+
+{% extends "tracker/base.html" %}
+
+{% block title %}Delete Application - JobTracker{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>Delete Job Application</h2>
+
+    <p>
+        Are you sure you want to delete your application
+        for <strong>{{ application.job_title }}</strong>
+        at <strong>{{ application.company_name }}</strong>?
+    </p>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        <button class="btn btn-danger" type="submit">
+            Yes, Delete
+        </button>
+
+        <a class="btn btn-secondary"
+           href="{% url 'tracker:dashboard' %}">
+            Cancel
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}

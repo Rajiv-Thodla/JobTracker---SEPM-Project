@@ -1,0 +1,277 @@
+
+{% extends "tracker/base.html" %}
+
+{% block title %}Applications - JobTracker{% endblock %}
+
+{% block content %}
+
+<style>
+    .inline-editor {
+        min-width: 145px;
+    }
+
+    .inline-editor summary {
+        cursor: pointer;
+        list-style: none;
+        font-weight: 500;
+        padding: 6px 0;
+        white-space: nowrap;
+    }
+
+    .inline-editor summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .inline-editor summary:hover {
+        color: var(--primary);
+    }
+
+    .inline-editor-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        margin-top: 8px;
+        min-width: 170px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+
+    .inline-editor-panel select,
+    .inline-editor-panel input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .inline-editor-panel .btn {
+        width: 100%;
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+</style>
+
+<div class="page-header">
+
+    <div>
+        <h1>Applications</h1>
+
+        <p class="muted">
+            Keep track of your applications and recruitment progress.
+        </p>
+    </div>
+
+    <a class="btn"
+       href="{% url 'tracker:add_application' %}">
+        New application
+    </a>
+
+</div>
+
+<div class="card">
+
+    <form method="get" class="filters">
+
+        <input type="text"
+               name="search"
+               placeholder="Search company or role"
+               value="{{ search }}">
+
+        <select name="status">
+
+            <option value="">All statuses</option>
+
+            {% for value, label in status_choices %}
+
+                <option value="{{ value }}"
+                    {% if selected_status == value %}
+                        selected
+                    {% endif %}>
+                    {{ label }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+        <button class="btn" type="submit">
+            Filter
+        </button>
+
+        <a class="btn btn-secondary"
+           href="{% url 'tracker:dashboard' %}">
+            Clear
+        </a>
+
+    </form>
+
+</div>
+
+<div class="card">
+
+    <div style="display:flex; justify-content:space-between;
+                align-items:center; margin-bottom:18px;">
+
+        <h2 style="margin:0;">Application history</h2>
+
+        <span class="muted">
+            {{ applications|length }} records
+        </span>
+
+    </div>
+
+    <div class="table-wrap">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Position</th>
+                    <th>Status</th>
+                    <th>Applied</th>
+                    <th>Resume</th>
+                    <th>OA / Interview</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for application in applications %}
+
+                <tr>
+                    <td>
+                        <strong>
+                            {{ application.company_name }}
+                        </strong>
+                    </td>
+                    <td>
+                        {{ application.job_title }}
+                    </td>
+                    <td>
+
+                        <details class="inline-editor">
+
+                            <summary>
+                                {{ application.get_status_display }}
+                                ▾
+                            </summary>
+
+                            <form method="post"
+                                  class="inline-editor-panel"
+                                  action="{% url 'tracker:update_status' application.pk %}">
+
+                                {% csrf_token %}
+
+                                <label class="sr-only"
+                                       for="status-{{ application.pk }}">
+                                    Recruitment status
+                                </label>
+
+                                <select
+                                    id="status-{{ application.pk }}"
+                                    name="status"
+                                    class="status-select"
+                                    data-status="{{ application.status }}">
+
+                                    {% for value, label in status_choices %}
+
+                                        <option
+                                            value="{{ value }}"
+                                            {% if application.status == value %}
+                                                selected
+                                            {% endif %}>
+                                            {{ label }}
+                                        </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                                <button type="submit" class="btn">
+                                    Save Changes
+                                </button>
+
+                            </form>
+
+                        </details>
+
+                    </td>
+                    <td class="muted">
+                        {{ application.application_date|date:"d M Y" }}
+                    </td>
+                    <td class="muted">
+                        {{ application.resume_version|default:"-" }}
+                    </td>
+                    <td class="muted">
+
+                        {% for event in application.date_events %}
+                            <details class="inline-editor">
+                                <summary>
+                                    {% if event.date %}
+                                        {{ event.label }}: {{ event.date|date:"d M Y" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                    ▾
+                                </summary>
+                                <form method="post"
+                                      class="inline-editor-panel"
+                                      action="{% url 'tracker:update_event_date' application.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="event_field" value="{{ event.field }}">
+                                    <label class="sr-only" for="date-{{ application.pk }}-{{ event.field }}">
+                                        {% if event.field == "oa_deadline" %}OA deadline{% else %}Interview date{% endif %}
+                                    </label>
+                                    <input type="date"
+                                           id="date-{{ application.pk }}-{{ event.field }}"
+                                           name="event_date"
+                                           value="{{ event.date|date:'Y-m-d' }}">
+                                    <button type="submit" class="btn">Save Changes</button>
+                                </form>
+                            </details>
+                        {% empty %}
+                            -
+                        {% endfor %}
+
+                    </td>
+                    <td>
+
+                        <div class="actions">
+
+                            <a class="btn btn-secondary"
+                               href="{% url 'tracker:edit_application' application.pk %}">
+                                Edit
+                            </a>
+
+                            <a class="btn btn-danger"
+                               href="{% url 'tracker:delete_application' application.pk %}">
+                                Delete
+                            </a>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="7" class="muted">
+                        No applications found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

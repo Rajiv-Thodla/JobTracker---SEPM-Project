@@ -1,0 +1,67 @@
+{% extends "tracker/base.html" %}
+
+{% block title %}Deadlines & Statistics - JobTracker{% endblock %}
+
+{% block content %}
+<style>
+    .statistics { display: flex; flex-wrap: wrap; gap: 20px 40px; margin: 0; }
+    .statistics dt { color: var(--muted); font-size: 13px; }
+    .statistics dd { margin: 4px 0 0; font-size: 24px; font-weight: 600; }
+    .deadline-list { list-style: none; padding: 0; margin: 0; }
+    .deadline-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 0; border-top: 1px solid var(--border); }
+    .deadline-details p { margin: 4px 0 0; }
+    .deadline-date { font-weight: 600; }
+    .deadline-form { display: flex; gap: 8px; align-items: end; }
+    .deadline-form label { font-size: 12px; font-weight: 400; }
+    .deadline-form input { width: 165px; }
+    @media (max-width: 900px) {
+        .deadline-row { flex-direction: column; align-items: flex-start; }
+        .deadline-form { flex-wrap: wrap; }
+    }
+</style>
+
+<div class="page-header">
+    <div>
+        <h1>Deadlines &amp; Statistics</h1>
+        <p class="muted">Your application totals and recruitment deadlines.</p>
+    </div>
+</div>
+
+<section class="card" aria-label="Application statistics">
+    <dl class="statistics">
+        {% for label, count in statistics %}
+            <div><dt>{{ label }}</dt><dd>{{ count }}</dd></div>
+        {% endfor %}
+    </dl>
+</section>
+
+<p class="muted">All saved OA and interview dates are shown, regardless of status. Past dates may be completed or overdue; check the application's current status. Today is {{ today|date:"d M Y" }}. Rescheduling here only updates your personal tracker; it does not change the company's deadline.</p>
+
+{% for heading, events in deadline_groups %}
+<section class="card" aria-labelledby="deadlines-{{ forloop.counter }}">
+    <h2 id="deadlines-{{ forloop.counter }}">{{ heading }}</h2>
+    <ul class="deadline-list">
+        {% for event in events %}
+        <li class="deadline-row">
+            <div class="deadline-details">
+                <span class="deadline-date">{{ event.type }}: {{ event.date|date:"d M Y" }}</span>
+                <p><strong>{{ event.application.company_name }}</strong> <span class="muted">— {{ event.application.job_title }} · {{ event.application.get_status_display }}</span></p>
+            </div>
+            <form class="deadline-form" method="post" action="{% url 'tracker:update_event_date' event.application.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="return_to" value="activity">
+                <input type="hidden" name="event_field" value="{{ event.field }}">
+                <div>
+                    <label for="event-{{ event.application.pk }}-{{ event.field }}">Reschedule {{ event.type }}</label>
+                    <input type="date" id="event-{{ event.application.pk }}-{{ event.field }}" name="event_date" value="{{ event.date|date:'Y-m-d' }}" required>
+                </div>
+                <button type="submit" class="btn btn-secondary">Save Changes</button>
+            </form>
+        </li>
+        {% empty %}
+        <li class="muted">No {{ heading|lower }}.</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endfor %}
+{% endblock %}
